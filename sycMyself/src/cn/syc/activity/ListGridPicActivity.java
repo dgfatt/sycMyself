@@ -118,7 +118,7 @@ public class ListGridPicActivity extends Activity {
 				// TODO Auto-generated method stub
 				PictureLog tPicture = (PictureLog) parent.getItemAtPosition(position);
 				String url = tPicture.getUrl();
-				Toast.makeText(ctx, url, Toast.LENGTH_SHORT).show();				
+				//Toast.makeText(ctx, url, Toast.LENGTH_SHORT).show();				
 				DownloadImageTask mTask = new DownloadImageTask();
 				mTask.execute(url);		
 				
@@ -198,7 +198,7 @@ public class ListGridPicActivity extends Activity {
 	private void showSelectPicWindow(Bitmap bm) {
 		View popView = View.inflate(this, R.layout.popupwindow_pic, null);
 		ImageView mImageView = (ImageView) popView.findViewById(R.id.selpic);
-		
+
 		// 获取屏幕宽高
 		int weight = getResources().getDisplayMetrics().widthPixels;
 		int height = getResources().getDisplayMetrics().heightPixels;
@@ -209,7 +209,7 @@ public class ListGridPicActivity extends Activity {
 		// 点击外部popueWindow消失
 		popupWindow.setOutsideTouchable(true);
 
-		mImageView.setImageBitmap(bm);		
+		mImageView.setImageBitmap(bm);
 		// popupWindow消失屏幕变为不透明
 		popupWindow.setOnDismissListener(new PopupWindow.OnDismissListener() {
 			@Override
@@ -359,10 +359,10 @@ public class ListGridPicActivity extends Activity {
 			// TODO Auto-generated method stub
 			
 			if(result){
-				ListGridPicActivity.this.bm=this.pic;
-				mLoadingDialog.dismiss();
+				ListGridPicActivity.this.bm=this.pic;			
 				showSelectPicWindow(bm);				
 				myGridView.setVisibility(View.VISIBLE);
+				mLoadingDialog.dismiss();
 				
 			}
 		}
