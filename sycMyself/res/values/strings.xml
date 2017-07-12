@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">三叶虫</string>
+    <string name="title">触屏选择</string>
+    <string name="action_settings">更改背景</string>
+    <string name="action_selectpic">选择图片</string>
+    <string name="ListGrid">图像日志</string>   
+	<string name="action_gallery">图片上传</string>
+</resources>
