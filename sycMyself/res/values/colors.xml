@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <resources>
+  <color name="black">#000000</color>  
   <color name="green">#5a9aa8</color>  
   <color name="darkgreen">#4d8693</color>  
   <color name="bg_color">#EDEDED</color>

@@ -2,17 +2,19 @@ package cn.syc.activity;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 
-import android.R.string;
+import com.nostra13.universalimageloader.core.DisplayImageOptions;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.listener.ImageLoadingProgressListener;
+import com.nostra13.universalimageloader.core.listener.PauseOnScrollListener;
+import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
+
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
-import android.database.CursorJoiner.Result;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -37,7 +39,12 @@ import net.UploadFile;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
+import android.widget.TextView;
 import android.widget.Toast;
+
+
+
+
 
 public class ListGridPicActivity extends Activity {
 
@@ -47,7 +54,7 @@ public class ListGridPicActivity extends Activity {
 	private static final int RESULT_CAMERA_IMAGE = 1;
 	public Dialog mLoadingDialog;
 	private String photoPath=null;
-	private Bitmap bm;
+	private ImageLoader mImageLoader;
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
@@ -74,35 +81,14 @@ public class ListGridPicActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		this.ctx = getBaseContext();
-		setContentView(R.layout.activity_list_grid_pic);
-		
-		/*Uri uri=Uri.parse("content://browser/markbook");
-		String[] filePathColumn = {MediaStore.Images.Media._ID,MediaStore.Images.Media.DATA,MediaStore.Images.Media.MIME_TYPE};
-		Cursor cursor = getContentResolver().query(uri, null, null, null, null);
-		String[] colnames=cursor.getColumnNames();
-		for(int i=0;i<colnames.length-1;i++){
-			System.out.println(i+": "+colnames[i]);
-		}
-		if(cursor.getCount()>0){
-			while(cursor.moveToNext()){				
-				System.out.println("id:"+cursor.getInt(0) +"  path:"+ cursor.getString(1)+"  mime: "+cursor.getString(12));
-				
-			}
-		}else{
-			System.out.println(cursor.getCount());
-		}*/
-		
-		
-		
-		
-		
+		setContentView(R.layout.activity_list_grid_pic);		
 		mLoadingDialog = LoadingDialog.createLoadingDialog(ListGridPicActivity.this, "加载中...");
 		mLoadingDialog.setCanceledOnTouchOutside(false);
-
-		myGridView = (GridView) findViewById(R.id.myGridView);
+		myGridView = (GridView) findViewById(R.id.myGridView);		
+		this.mImageLoader = ImageLoader.getInstance();	
 
 		ArrayList<PictureLog> mPictures = new ArrayList<PictureLog>();
-		for (int i = 0; i < 9; i++) {
+		for (int i = 0; i < 150; i++) {
 			String url = "http://10.32.0.66/app/upload/";
 			PictureLog tempPicture = new PictureLog("照片" + i, url + "p" + i + ".png");
 			mPictures.add(tempPicture);
@@ -110,22 +96,27 @@ public class ListGridPicActivity extends Activity {
 
 		MyGridViewAdapter mMyGridViewAdapter = new MyGridViewAdapter(ctx, mPictures);
 		myGridView.setAdapter(mMyGridViewAdapter);
-
+		myGridView.setOnScrollListener(new PauseOnScrollListener(mImageLoader, true, true));
 		myGridView.setOnItemClickListener(new OnItemClickListener() {
 
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 				// TODO Auto-generated method stub
 				PictureLog tPicture = (PictureLog) parent.getItemAtPosition(position);
-				String url = tPicture.getUrl();
+				String url = tPicture.getUrl();				
+				showSelectPicWindow(url);
+				
 				//Toast.makeText(ctx, url, Toast.LENGTH_SHORT).show();				
-				DownloadImageTask mTask = new DownloadImageTask();
-				mTask.execute(url);		
+				/*DownloadImageTask mTask = new DownloadImageTask();
+				mTask.execute(url);	*/	
 				
 			}
 		});
 
 	}
+	
+	
+	
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -195,10 +186,10 @@ public class ListGridPicActivity extends Activity {
 		return imageFileName;
 	}
 
-	private void showSelectPicWindow(Bitmap bm) {
+	private void showSelectPicWindow(String url) {
 		View popView = View.inflate(this, R.layout.popupwindow_pic, null);
 		ImageView mImageView = (ImageView) popView.findViewById(R.id.selpic);
-
+		final TextView mTextView =(TextView)popView.findViewById(R.id.progressText);
 		// 获取屏幕宽高
 		int weight = getResources().getDisplayMetrics().widthPixels;
 		int height = getResources().getDisplayMetrics().heightPixels;
@@ -209,7 +200,18 @@ public class ListGridPicActivity extends Activity {
 		// 点击外部popueWindow消失
 		popupWindow.setOutsideTouchable(true);
 
-		mImageView.setImageBitmap(bm);
+		//mImageView.setImageBitmap(bm);
+			
+		
+		ListGridPicActivity.this.mImageLoader.displayImage(url, mImageView, MyGridViewAdapter.getImageLoaderOptions(), new SimpleImageLoadingListener(), new ImageLoadingProgressListener() {
+			
+			@Override
+			public void onProgressUpdate(String arg0, View arg1, int arg2, int arg3) {
+				// TODO Auto-generated method stub
+				Log.i("mImageLoader-onProgressUpdate", "current:"+arg2+"total:"+arg3);
+				mTextView.setText(100.0f * arg2 / arg3+"%");
+			}
+		});
 		// popupWindow消失屏幕变为不透明
 		popupWindow.setOnDismissListener(new PopupWindow.OnDismissListener() {
 			@Override
@@ -359,8 +361,8 @@ public class ListGridPicActivity extends Activity {
 			// TODO Auto-generated method stub
 			
 			if(result){
-				ListGridPicActivity.this.bm=this.pic;			
-				showSelectPicWindow(bm);				
+				//ListGridPicActivity.this.bm=this.pic;			
+				//showSelectPicWindow(bm);				
 				myGridView.setVisibility(View.VISIBLE);
 				mLoadingDialog.dismiss();
 				
@@ -371,7 +373,12 @@ public class ListGridPicActivity extends Activity {
 		protected Boolean doInBackground(String... params) {
 			// TODO Auto-generated method stub
 			Log.i(TAG, "doInBackground called");
-			this.pic = HttpUtils.getNetWorkBitmap(params[0]);
+			Bitmap img = HttpUtils.getNetWorkBitmap(params[0]);	
+			int imgW = img.getWidth();
+			int imgH = img.getHeight();			
+			this.pic = Bitmap.createScaledBitmap(img, imgW/4, imgH/4,false);		
+			
+			
 			System.out.println(pic.getByteCount());
 			/*if(pic!=null){
 				return true;
@@ -388,6 +395,28 @@ public class ListGridPicActivity extends Activity {
 			// mMyclockView.setPoint(progressValue);
 		}	
 		
+	}
+	
+	
+	private void getSDFiles(){
+		//uri:MediaStore.Images.Media.EXTERNAL_CONTENT_URI 
+		//MediaStore.Audio.Media.EXTERNAL_CONTENT_URI	
+		//MediaStore.Files.getContentUri("external")
+		Uri uri=Uri.parse("content://browser/markbook");
+		String[] filePathColumn = {MediaStore.Images.Media._ID,MediaStore.Images.Media.DATA,MediaStore.Images.Media.MIME_TYPE};
+		Cursor cursor = getContentResolver().query(uri, null, null, null, null);
+		String[] colnames=cursor.getColumnNames();
+		for(int i=0;i<colnames.length-1;i++){
+			System.out.println(i+": "+colnames[i]);
+		}
+		if(cursor.getCount()>0){
+			while(cursor.moveToNext()){				
+				System.out.println("id:"+cursor.getInt(0) +"  path:"+ cursor.getString(1)+"  mime: "+cursor.getString(12));
+				
+			}
+		}else{
+			System.out.println(cursor.getCount());
+		}
 	}
 }
 

@@ -1,15 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="@color/bg_color"
+    android:layout_height="match_parent"
+    android:background="@color/black"
     >
 
     <ImageView
         android:id="@+id/selpic"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"      
-        android:layout_alignParentTop="true"    
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" 
+        android:layout_alignParentTop="true"
         android:src="@drawable/ic_launcher" />
+
+    <TextView
+        android:id="@+id/progressText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/selpic"
+        android:layout_centerHorizontal="true"
+        android:text="进度"
+        android:textColor="@color/bg_color"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
 
 </RelativeLayout>
