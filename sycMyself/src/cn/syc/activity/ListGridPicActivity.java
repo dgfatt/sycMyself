@@ -3,11 +3,13 @@ package cn.syc.activity;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import com.handmark.pulltorefresh.library.PullToRefreshBase;
+import com.handmark.pulltorefresh.library.PullToRefreshBase.OnRefreshListener2;
+import com.handmark.pulltorefresh.library.PullToRefreshGridView;
 
-import com.nostra13.universalimageloader.core.DisplayImageOptions;
+
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.listener.ImageLoadingProgressListener;
-import com.nostra13.universalimageloader.core.listener.PauseOnScrollListener;
 import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
 
 import android.app.Activity;
@@ -48,13 +50,18 @@ import android.widget.Toast;
 
 public class ListGridPicActivity extends Activity {
 
-	private GridView myGridView;
+	private PullToRefreshGridView mPullRefreshListView;
+	private MyGridViewAdapter mMyGridViewAdapter;
+	private ArrayList<PictureLog> mPictures = null;
+	//private GridView myGridView;
 	private Context ctx;
 	private static final int RESULT_LOAD_IMAGE = 0;
 	private static final int RESULT_CAMERA_IMAGE = 1;
 	public Dialog mLoadingDialog;
 	private String photoPath=null;
 	private ImageLoader mImageLoader;
+	private int p=1;
+	private int pageCount=12;
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
@@ -69,7 +76,7 @@ public class ListGridPicActivity extends Activity {
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
 		if (id == R.id.action_gallery) {
-			myGridView.setVisibility(View.GONE);
+			//myGridView.setVisibility(View.GONE);
 			showPopueWindow();
 			return true;
 		}
@@ -77,6 +84,16 @@ public class ListGridPicActivity extends Activity {
 		return super.onOptionsItemSelected(item);
 	}
 
+	private ArrayList<PictureLog> getData(int p){
+		ArrayList<PictureLog> mPictures = new ArrayList<PictureLog>();
+		for (int i = 0; i <= this.pageCount-1; i++) {
+			String url = "http://10.32.0.66/app/upload/";
+			//Log.e("TAG", "url:"+ url + "p" + ((p-1)*this.pageCount+i) + ".png" ); 
+			PictureLog tempPicture = new PictureLog("照片" + ((p-1)*this.pageCount+i), url + "p" + ((p-1)*this.pageCount+i) + ".png");
+			mPictures.add(tempPicture);
+		}
+		return mPictures;
+	}
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -84,17 +101,57 @@ public class ListGridPicActivity extends Activity {
 		setContentView(R.layout.activity_list_grid_pic);		
 		mLoadingDialog = LoadingDialog.createLoadingDialog(ListGridPicActivity.this, "加载中...");
 		mLoadingDialog.setCanceledOnTouchOutside(false);
-		myGridView = (GridView) findViewById(R.id.myGridView);		
+		mPullRefreshListView = (PullToRefreshGridView) findViewById(R.id.pull_refresh_grid);		
 		this.mImageLoader = ImageLoader.getInstance();	
 
-		ArrayList<PictureLog> mPictures = new ArrayList<PictureLog>();
-		for (int i = 0; i < 150; i++) {
-			String url = "http://10.32.0.66/app/upload/";
-			PictureLog tempPicture = new PictureLog("照片" + i, url + "p" + i + ".png");
-			mPictures.add(tempPicture);
-		}
+		
+		this.mPictures=getData(p);
+		this.mMyGridViewAdapter = new MyGridViewAdapter(ctx, mPictures);
+		mPullRefreshListView.setAdapter(mMyGridViewAdapter);
+		mMyGridViewAdapter.notifyDataSetChanged();
+		mPullRefreshListView.onRefreshComplete();
+		mPullRefreshListView.setOnRefreshListener(new OnRefreshListener2<GridView>() {
+		
+			
+			@Override
+			public void onPullDownToRefresh(PullToRefreshBase<GridView> refreshView) {
+				//Toast.makeText(ListGridPicActivity.this, "Pull Down!", Toast.LENGTH_SHORT).show();
+				 ListGridPicActivity.this.p=ListGridPicActivity.this.p-1;
+				 if(ListGridPicActivity.this.p==0){
+					 ListGridPicActivity.this.p=1;
+				 }
+				 //Log.e("TAG", "onPullDownToRefresh:"+ ListGridPicActivity.this.p); 		
+				 new GetDataTask().execute(ListGridPicActivity.this.p);			
+			}
 
-		MyGridViewAdapter mMyGridViewAdapter = new MyGridViewAdapter(ctx, mPictures);
+			@Override
+			public void onPullUpToRefresh(PullToRefreshBase<GridView> refreshView) {
+				//Toast.makeText(ListGridPicActivity.this, "Pull Up!", Toast.LENGTH_SHORT).show();
+				 ListGridPicActivity.this.p=ListGridPicActivity.this.p+1;
+				 if(ListGridPicActivity.this.p>15){
+					 ListGridPicActivity.this.p=15;
+				 }
+				// Log.e("TAG", "onPullDownToRefresh:"+ ListGridPicActivity.this.p); 		
+				 new GetDataTask().execute(ListGridPicActivity.this.p);				
+			}
+
+		});
+		mPullRefreshListView.setOnItemClickListener(new OnItemClickListener() {
+
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+				// TODO Auto-generated method stub
+				PictureLog tPicture = (PictureLog) parent.getItemAtPosition(position);
+				String url = tPicture.getUrl();				
+				showSelectPicWindow(url);
+				
+				//Toast.makeText(ctx, url, Toast.LENGTH_SHORT).show();				
+				DownloadImageTask mTask = new DownloadImageTask();
+				mTask.execute(url);		
+				
+			}
+		});
+		/*MyGridViewAdapter mMyGridViewAdapter = new MyGridViewAdapter(ctx, mPictures);
 		myGridView.setAdapter(mMyGridViewAdapter);
 		myGridView.setOnScrollListener(new PauseOnScrollListener(mImageLoader, true, true));
 		myGridView.setOnItemClickListener(new OnItemClickListener() {
@@ -107,13 +164,36 @@ public class ListGridPicActivity extends Activity {
 				showSelectPicWindow(url);
 				
 				//Toast.makeText(ctx, url, Toast.LENGTH_SHORT).show();				
-				/*DownloadImageTask mTask = new DownloadImageTask();
-				mTask.execute(url);	*/	
+				DownloadImageTask mTask = new DownloadImageTask();
+				mTask.execute(url);		
 				
 			}
-		});
+		});*/
 
 	}
+	
+	 // 下拉刷新加载数据
+    private class GetDataTask extends AsyncTask<Integer, Integer, ArrayList<PictureLog>> {
+       
+
+        @Override
+        protected void onPostExecute(ArrayList<PictureLog> result) {            
+           
+        	ListGridPicActivity.this.mMyGridViewAdapter = new MyGridViewAdapter(ctx, result);
+    		mPullRefreshListView.setAdapter(mMyGridViewAdapter);
+    		mMyGridViewAdapter.notifyDataSetChanged();
+    		mPullRefreshListView.onRefreshComplete();
+
+        }
+
+		@Override
+		protected ArrayList<PictureLog> doInBackground(Integer... params) {
+			// TODO Auto-generated method stub
+			ArrayList<PictureLog> mArrayList=ListGridPicActivity.this.getData(params[0]);
+
+            return mArrayList;
+		}
+    }
 	
 	
 	
@@ -237,7 +317,7 @@ public class ListGridPicActivity extends Activity {
 		Button bt_cancle = (Button) popView.findViewById(R.id.btn_pop_cancel);
 		// 获取屏幕宽高
 		int weight = getResources().getDisplayMetrics().widthPixels;
-		int height = getResources().getDisplayMetrics().heightPixels * 1 / 3;
+		int height = getResources().getDisplayMetrics().heightPixels -20;
 
 		final PopupWindow popupWindow = new PopupWindow(popView, weight, height);
 		// popupWindow.setAnimationStyle(R.style.PopupAnimation);
@@ -308,7 +388,7 @@ public class ListGridPicActivity extends Activity {
 				Toast.makeText(ListGridPicActivity.this, "上传失败", Toast.LENGTH_LONG).show();
 			}		
 			mLoadingDialog.dismiss();
-			myGridView.setVisibility(View.VISIBLE);
+			//myGridView.setVisibility(View.VISIBLE);
 			if(photoPath!=null){
 				//如果拍照生产的临时图片存在，在上传完成时删除临时文件
 				deleteFile(photoPath);
@@ -338,7 +418,7 @@ public class ListGridPicActivity extends Activity {
 			// TODO Auto-generated method stub
 			super.onCancelled(result);
 			mLoadingDialog.dismiss();
-			myGridView.setVisibility(View.VISIBLE);
+			//myGridView.setVisibility(View.VISIBLE);
 		}
 	}
 
@@ -352,7 +432,7 @@ public class ListGridPicActivity extends Activity {
 			super.onPreExecute();
 			Log.i(TAG, "onPreExecute called");
 			mLoadingDialog.show();	
-			myGridView.setVisibility(View.GONE);		
+			//myGridView.setVisibility(View.GONE);		
 	
 		}
 	
@@ -363,7 +443,7 @@ public class ListGridPicActivity extends Activity {
 			if(result){
 				//ListGridPicActivity.this.bm=this.pic;			
 				//showSelectPicWindow(bm);				
-				myGridView.setVisibility(View.VISIBLE);
+				//myGridView.setVisibility(View.VISIBLE);
 				mLoadingDialog.dismiss();
 				
 			}
