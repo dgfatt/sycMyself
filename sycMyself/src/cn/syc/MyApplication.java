@@ -21,7 +21,7 @@ public class MyApplication extends Application {
 
     private void initImageLoader(Context context){
         /**定义缓存文件的目录**/
-        File cacheDir= StorageUtils.getOwnCacheDirectory(getApplicationContext(),"syc_Cache/");
+        File cacheDir= StorageUtils.getOwnCacheDirectory(getApplicationContext(),context.getPackageName());
         /**ImageLoader的配置**/
         ImageLoaderConfiguration config=new ImageLoaderConfiguration.Builder(context)
                 .threadPriority(Thread.NORM_PRIORITY-2) //设置同时运行的线程

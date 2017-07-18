@@ -31,8 +31,8 @@ public class LoadingDialog {
 				context, R.anim.dialog_loading_animation);		
 		spaceshipImage.startAnimation(hyperspaceJumpAnimation);
 		tipTextView.setText(msg);
-		Dialog loadingDialog = new Dialog(context, R.style.syc_transparent);
-		loadingDialog.setCancelable(false);
+		Dialog loadingDialog = new Dialog(context, R.style.syc_Dialog_style);
+		loadingDialog.setCancelable(true);
 		loadingDialog.setContentView(layout, new LinearLayout.LayoutParams(
 				LinearLayout.LayoutParams.MATCH_PARENT,
 				LinearLayout.LayoutParams.MATCH_PARENT));

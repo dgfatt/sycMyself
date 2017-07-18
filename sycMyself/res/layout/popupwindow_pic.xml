@@ -21,5 +21,13 @@
         android:text="进度"
         android:textColor="@color/bg_color"
         android:textAppearance="?android:attr/textAppearanceMedium" />
+    
+    <ProgressBar android:id="@+id/progress_horizontal"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_below="@+id/progressText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"        
+       />
 
 </RelativeLayout>
